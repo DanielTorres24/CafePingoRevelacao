@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>baby.exe</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;0,800;1,400&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+
+:root{
+  --bg:      #0d1117;
+  --bg2:     #161b22;
+  --bg3:     #21262d;
+  --border:  #30363d;
+  --green:   #3fb950;
+  --green2:  #56d364;
+  --cyan:    #79c0ff;
+  --yellow:  #e3b341;
+  --purple:  #bc8cff;
+  --pink:    #f778ba;
+  --orange:  #ffa657;
+  --red:     #ff7b72;
+  --text:    #e6edf3;
+  --muted:   #8b949e;
+  --sat: env(safe-area-inset-top,0px);
+  --sab: env(safe-area-inset-bottom,0px);
+  --sal: env(safe-area-inset-left,0px);
+  --sar: env(safe-area-inset-right,0px);
+}
+
+body{
+  background:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  color:var(--text);
+}
+
+/* ═══════════════════════════════
+   MATRIX RAIN
+═══════════════════════════════ */
+#matrix-canvas{
+  position:fixed;inset:0;
+  z-index:0;opacity:.18;
+  pointer-events:none;
+}
+
+/* ═══════════════════════════════
+   ECRÃ INTRO
+═══════════════════════════════ */
+#screen-intro{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:100;
+  padding:calc(var(--sat)+2rem) calc(var(--sar)+1.5rem) calc(var(--sab)+2rem) calc(var(--sal)+1.5rem);
+  text-align:center;
+  background:var(--bg);
+}
+
+.boot-lines{
+  font-size:clamp(.62rem,.75rem + .2vw,.82rem);
+  color:var(--green);
+  text-align:left;
+  width:min(340px,88vw);
+  margin-bottom:2rem;
+  opacity:0;
+  animation:fadeUp .5s ease forwards .3s;
+}
+.boot-line{
+  display:flex;gap:.5rem;align-items:flex-start;
+  margin-bottom:.25rem;
+  opacity:0;
+}
+.boot-line.l1{animation:fadeUp .4s ease forwards .5s}
+.boot-line.l2{animation:fadeUp .4s ease forwards .9s}
+.boot-line.l3{animation:fadeUp .4s ease forwards 1.3s}
+.boot-line.l4{animation:fadeUp .4s ease forwards 1.7s}
+.bl-ok{color:var(--green);font-weight:700}
+.bl-warn{color:var(--yellow)}
+.bl-info{color:var(--cyan)}
+.bl-hot{color:var(--orange)}
+
+.intro-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(2rem,7.5vw,4rem);
+  font-weight:700;
+  line-height:1.1;
+  color:var(--text);
+  opacity:0;animation:fadeUp .7s ease forwards 2.1s;
+}
+.intro-title .hl-green{color:var(--green)}
+.intro-title .hl-yellow{color:var(--yellow)}
+
+.intro-sub{
+  font-size:clamp(.72rem,2vw,.85rem);
+  color:var(--muted);margin-top:.8rem;
+  line-height:1.6;
+  opacity:0;animation:fadeUp .7s ease forwards 2.5s;
+}
+
+.intro-btn{
+  margin-top:2rem;
+  padding:clamp(.8rem,2.5vw,1rem) clamp(1.8rem,5vw,2.8rem);
+  background:var(--green);color:var(--bg);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;font-size:clamp(.75rem,2vw,.88rem);
+  border:none;cursor:pointer;border-radius:6px;
+  min-height:50px;
+  box-shadow:0 0 20px rgba(63,185,80,.35);
+  transition:all .25s ease;
+  opacity:0;animation:fadeUp .7s ease forwards 2.9s;
+  touch-action:manipulation;
+}
+.intro-btn:active{transform:scale(.95)}
+
+.cursor-blink{
+  display:inline-block;width:10px;height:1.1em;
+  background:var(--green);vertical-align:text-bottom;
+  animation:blink 1s step-end infinite;
+  margin-left:2px;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+#screen-intro.exit{animation:exitScreen .9s ease forwards}
+@keyframes exitScreen{
+  0%{opacity:1;filter:brightness(1)}
+  40%{opacity:1;filter:brightness(2)}
+  100%{opacity:0;filter:brightness(0);pointer-events:none}
+}
+
+/* ═══════════════════════════════
+   PROGRESS
+═══════════════════════════════ */
+#progress-bar{
+  position:fixed;top:0;left:0;right:0;
+  height:3px;background:var(--border);
+  z-index:150;display:none;
+  padding-top:var(--sat);
+}
+#progress-bar.visible{display:block}
+#progress-fill{
+  height:3px;
+  background:linear-gradient(90deg,var(--green),var(--cyan));
+  transition:width .6s cubic-bezier(.4,0,.2,1);
+}
+
+#progress-dots{
+  position:fixed;
+  bottom:calc(var(--sab) + 1rem);
+  left:50%;transform:translateX(-50%);
+  display:none;gap:.5rem;align-items:center;z-index:150;
+}
+#progress-dots.visible{display:flex}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .4s ease}
+.dot.active{width:22px;border-radius:3px;background:var(--green)}
+.dot.done{background:var(--muted)}
+
+/* ═══════════════════════════════
+   STEP SYSTEM
+═══════════════════════════════ */
+#main{display:none}
+.step{
+  position:fixed;inset:0;
+  display:none;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:calc(var(--sat)+1rem) calc(var(--sal)+1.2rem) calc(var(--sab)+3.5rem) calc(var(--sar)+1.2rem);
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  background:var(--bg);
+}
+.step.active{display:flex}
+
+.step-content{
+  display:flex;flex-direction:column;
+  align-items:center;
+  width:100%;max-width:500px;
+  margin:auto;padding:.5rem 0 1rem;
+  animation:stepIn .5s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes stepIn{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ─ terminal window ─ */
+.term-window{
+  width:100%;
+  border:1px solid var(--border);
+  border-radius:10px;
+  overflow:hidden;
+  background:var(--bg2);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  margin:1.2rem 0;
+}
+.term-bar{
+  background:var(--bg3);
+  padding:.55rem 1rem;
+  display:flex;align-items:center;gap:.5rem;
+  border-bottom:1px solid var(--border);
+}
+.term-dot{width:12px;height:12px;border-radius:50%}
+.term-dot.r{background:#ff5f57}
+.term-dot.y{background:#ffbd2e}
+.term-dot.g{background:#28c840}
+.term-title{
+  font-size:clamp(.6rem,1.7vw,.7rem);
+  color:var(--muted);margin-left:.4rem;
+  flex:1;text-align:center;
+}
+.term-body{
+  padding:1rem 1.2rem;
+  text-align:left;
+  font-size:clamp(.72rem,2vw,.82rem);
+  line-height:1.9;
+}
+
+/* syntax colors */
+.c-green{color:var(--green)}
+.c-cyan{color:var(--cyan)}
+.c-yellow{color:var(--yellow)}
+.c-purple{color:var(--purple)}
+.c-pink{color:var(--pink)}
+.c-orange{color:var(--orange)}
+.c-red{color:var(--red)}
+.c-muted{color:var(--muted)}
+.c-text{color:var(--text)}
+
+.prompt::before{content:'> ';color:var(--green)}
+
+/* ─ shared buttons ─ */
+.cmd-btn{
+  margin-top:1.4rem;
+  padding:clamp(.75rem,2.2vw,.9rem) clamp(1.5rem,4.5vw,2.2rem);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  font-size:clamp(.72rem,2vw,.82rem);
+  border:none;cursor:pointer;border-radius:6px;
+  min-height:48px;transition:all .25s ease;
+  touch-action:manipulation;-webkit-appearance:none;
+  letter-spacing:.03em;
+}
+.cmd-btn:active{transform:scale(.94)}
+.cmd-btn.green{background:var(--green);color:var(--bg);box-shadow:0 0 16px rgba(63,185,80,.3)}
+.cmd-btn.cyan {background:var(--cyan); color:var(--bg);box-shadow:0 0 16px rgba(121,192,255,.3)}
+.cmd-btn.yellow{background:var(--yellow);color:var(--bg);box-shadow:0 0 16px rgba(227,179,65,.3)}
+.cmd-btn.purple{background:var(--purple);color:var(--bg);box-shadow:0 0 16px rgba(188,140,255,.3)}
+.cmd-btn.ghost{background:transparent;color:var(--green);border:1px solid var(--green)}
+
+/* eyebrow */
+.eyebrow{
+  font-size:clamp(.55rem,.65rem + .2vw,.68rem);
+  font-weight:700;letter-spacing:.3em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.5rem;
+  display:flex;align-items:center;justify-content:center;gap:.4rem;
+}
+.step-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(1.7rem,5.5vw,3rem);
+  font-weight:700;line-height:1.1;
+  color:var(--text);
+}
+.step-body{
+  font-size:clamp(.75rem,2.1vw,.88rem);
+  color:var(--muted);line-height:1.8;
+  max-width:36ch;margin:.7rem auto 0;
+}
+.step-body strong{color:var(--text)}
+
+/* ═══════════════════════════════
+   STEP 1 — compile the news
+═══════════════════════════════ */
+/* typing animation */
+.type-line{
+  overflow:hidden;white-space:nowrap;
+  border-right:2px solid transparent;
+  width:0;
+}
+.type-line.go{
+  animation:typing 1.2s steps(40,end) forwards, cursor-off .1s step-end forwards 1.3s;
+}
+@keyframes typing{from{width:0}to{width:100%}}
+@keyframes cursor-off{to{border-color:transparent}}
+
+.output-box{
+  margin-top:.8rem;
+  padding:.8rem 1rem;
+  background:rgba(63,185,80,.08);
+  border:1px solid rgba(63,185,80,.25);
+  border-radius:6px;
+  font-size:clamp(.8rem,2.5vw,.95rem);
+  text-align:center;
+  display:none;
+}
+.output-box.show{display:block}
+
+/* ═══════════════════════════════
+   STEP 2 — deployment timer
+═══════════════════════════════ */
+#step-2{background:var(--bg)}
+
+.pipeline{
+  width:100%;margin:1.2rem 0;
+  border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;
+  background:var(--bg2);
+}
+.pipe-row{
+  display:flex;align-items:center;gap:.8rem;
+  padding:.75rem 1rem;
+  border-bottom:1px solid var(--border);
+  font-size:clamp(.65rem,1.8vw,.75rem);
+}
+.pipe-row:last-child{border-bottom:none}
+.pipe-icon{font-size:1rem;width:1.4rem;text-align:center;flex-shrink:0}
+.pipe-label{color:var(--muted);flex:1;text-align:left}
+.pipe-value{color:var(--cyan);font-weight:700;text-align:right}
+.pipe-status{font-size:.65rem;font-weight:700;letter-spacing:.08em;padding:.2rem .5rem;border-radius:4px}
+.pipe-status.running{background:rgba(227,179,65,.15);color:var(--yellow)}
+.pipe-status.done{background:rgba(63,185,80,.15);color:var(--green)}
+.pipe-status.pending{background:rgba(139,148,158,.1);color:var(--muted)}
+
+.countdown-grid{
+  display:flex;gap:clamp(.5rem,2vw,1rem);
+  justify-content:center;flex-wrap:wrap;
+  margin:.5rem 0;
+}
+.count-block{display:flex;flex-direction:column;align-items:center}
+.count-box{
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:clamp(.5rem,1.5vw,.75rem) clamp(.6rem,2vw,1rem);
+  min-width:clamp(56px,15vw,72px);
+  text-align:center;
+}
+.count-num{
+  font-size:clamp(1.8rem,6.5vw,3rem);
+  font-weight:800;color:var(--cyan);
+  line-height:1;display:block;
+  font-variant-numeric:tabular-nums;
+}
+.count-label{
+  font-size:clamp(.48rem,.6rem + .15vw,.6rem);
+  font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--muted);margin-top:.35rem;
+}
+.count-sep{
+  font-size:clamp(1.5rem,5vw,2.2rem);
+  color:var(--border);align-self:flex-start;
+  margin-top:clamp(.6rem,1.8vw,.9rem);
+}
+
+.date-tag{
+  display:inline-block;margin-top:1rem;
+  padding:.4rem 1rem;
+  background:rgba(121,192,255,.1);
+  border:1px solid rgba(121,192,255,.25);
+  border-radius:4px;
+  font-size:clamp(.65rem,1.8vw,.75rem);
+  color:var(--cyan);
+}
+
+/* ═══════════════════════════════
+   STEP 3 — binary choice
+═══════════════════════════════ */
+#step-3{background:var(--bg)}
+
+.binary-choice{
+  display:flex;gap:clamp(.8rem,3vw,1.4rem);
+  margin:1.4rem 0 1rem;
+  justify-content:center;
+  transition:opacity .5s,transform .5s;
+}
+.bin-card{
+  width:clamp(110px,28vw,140px);
+  height:clamp(110px,28vw,140px);
+  border-radius:12px;
+  border:2px solid var(--border);
+  background:var(--bg2);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:all .3s ease;
+  touch-action:manipulation;
+  gap:.4rem;
+}
+.bin-card:active{transform:scale(.92)}
+
+.bin-card.zero:hover,.bin-card.zero:focus{border-color:var(--pink);box-shadow:0 0 20px rgba(247,120,186,.2)}
+.bin-card.one:hover, .bin-card.one:focus {border-color:var(--cyan);box-shadow:0 0 20px rgba(121,192,255,.2)}
+
+.bin-card.sel-one  {border-color:var(--cyan); background:rgba(121,192,255,.08);transform:scale(1.07);box-shadow:0 0 28px rgba(121,192,255,.3)}
+.bin-card.sel-zero {border-color:var(--pink); background:rgba(247,120,186,.08);transform:scale(1.07)}
+.bin-card.loser    {opacity:.18;transform:scale(.84)!important}
+
+.bin-digit{
+  font-size:clamp(2.2rem,8vw,3.2rem);
+  font-weight:800;line-height:1;
+}
+.bin-card.zero .bin-digit{color:var(--pink)}
+.bin-card.one  .bin-digit{color:var(--cyan)}
+.bin-card.sel-one  .bin-digit{color:var(--cyan)}
+.bin-card.sel-zero .bin-digit{color:var(--pink)}
+
+.bin-sub{
+  font-size:clamp(.6rem,1.7vw,.7rem);
+  font-weight:700;letter-spacing:.08em;color:var(--muted);
+}
+
+.vs-label{
+  font-size:clamp(1rem,3vw,1.3rem);
+  color:var(--border);align-self:center;font-weight:800;
+}
+
+/* result reveal */
+.gender-result{
+  display:none;flex-direction:column;align-items:center;
+  animation:popIn .7s cubic-bezier(.34,1.56,.64,1) forwards;
+  margin:.5rem 0;
+}
+.gender-result.show{display:flex}
+@keyframes popIn{
+  from{opacity:0;transform:scale(.4)}
+  to{opacity:1;transform:scale(1)}
+}
+
+.result-code-block{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:1rem 1.4rem;
+  text-align:left;
+  font-size:clamp(.72rem,2vw,.82rem);
+  line-height:2;
+  width:min(300px,86vw);
+}
+
+.result-big{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(2.2rem,9vw,4rem);
+  font-weight:700;color:var(--cyan);
+  line-height:1;margin-top:.4rem;text-align:center;
+}
+.result-sub{
+  font-size:clamp(.72rem,2vw,.82rem);
+  color:var(--muted);margin-top:.4rem;text-align:center;
+}
+
+/* ═══════════════════════════════
+   STEP 4 — build success
+═══════════════════════════════ */
+#step-4{background:var(--bg)}
+
+.success-banner{
+  width:100%;
+  background:rgba(63,185,80,.1);
+  border:1px solid rgba(63,185,80,.35);
+  border-radius:10px;
+  padding:1rem 1.2rem;
+  text-align:center;
+  margin:1.2rem 0;
+}
+.success-icon{font-size:clamp(2rem,7vw,3rem);display:block;margin-bottom:.4rem}
+.success-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:clamp(1.4rem,5vw,2.2rem);
+  font-weight:700;color:var(--green);
+  letter-spacing:.02em;
+}
+.success-sub{
+  font-size:clamp(.65rem,1.8vw,.75rem);
+  color:var(--muted);margin-top:.3rem;
+}
+
+.log-box{
+  width:100%;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;
+}
+.log-bar{
+  background:var(--bg3);
+  border-bottom:1px solid var(--border);
+  padding:.5rem 1rem;
+  font-size:clamp(.6rem,1.7vw,.7rem);
+  color:var(--muted);text-align:left;
+}
+.log-body{padding:.9rem 1.1rem;text-align:left}
+.log-line{
+  font-size:clamp(.68rem,1.9vw,.78rem);
+  line-height:1.9;display:flex;gap:.6rem;align-items:flex-start;
+}
+.log-ts{color:var(--border);flex-shrink:0;font-size:.65em}
+.log-msg{flex:1}
+
+.final-parents{
+  font-size:clamp(.72rem,2vw,.82rem);
+  color:var(--muted);margin-top:1rem;
+  font-style:italic;
+}
+
+/* ═══════════════════════════════
+   CONFETTI (binary themed)
+═══════════════════════════════ */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden}
+.cp{position:absolute;opacity:0;font-family:'JetBrains Mono',monospace;font-weight:700}
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ═══ INTRO ═══ -->
+<div id="screen-intro">
+  <div class="boot-lines">
+    <div class="boot-line l1"><span class="bl-ok">[  OK  ]</span><span>Iniciando sistema nervoso parental...</span></div>
+    <div class="boot-line l2"><span class="bl-warn">[ WARN ]</span><span>Segredo crítico detetado em memória</span></div>
+    <div class="boot-line l3"><span class="bl-info">[ INFO ]</span><span>A compilar novidades... 100%</span></div>
+    <div class="boot-line l4"><span class="bl-hot">[ EXEC ]</span><span>Carregar <span class="c-green">baby_announcement.sh</span></span></div>
+  </div>
+
+  <h1 class="intro-title">
+    <span class="hl-green">Daniel</span> &amp; <span class="hl-yellow">Marta</span><br>
+    têm um<br>commit importante
+  </h1>
+  <p class="intro-sub">
+    Aviso: este push não tem rollback possível 😅
+  </p>
+  <button class="intro-btn" onclick="beginReveal()">
+    $ ./executar_novidade.sh<span class="cursor-blink"></span>
+  </button>
+</div>
+
+<!-- ═══ PROGRESSO ═══ -->
+<div id="progress-bar"><div id="progress-fill" style="width:25%"></div></div>
+<div id="progress-dots">
+  <div class="dot active" id="dot-1"></div>
+  <div class="dot" id="dot-2"></div>
+  <div class="dot" id="dot-3"></div>
+  <div class="dot" id="dot-4"></div>
+</div>
+
+<div id="main">
+
+  <!-- ═══ STEP 1 — O BEBÉ ═══ -->
+  <div class="step active" id="step-1">
+    <div class="step-content">
+      <p class="eyebrow">// módulo 01</p>
+      <h2 class="step-title"><span class="c-green">função</span><br>newLife()</h2>
+      <p class="step-body">
+        O Daniel e a Marta escreveram um algoritmo muito especial. O resultado foi inesperado, tem 9 meses de compile time, e <strong>não aceitam pull requests externos.</strong>
+      </p>
+
+      <div class="term-window">
+        <div class="term-bar">
+          <div class="term-dot r"></div>
+          <div class="term-dot y"></div>
+          <div class="term-dot g"></div>
+          <span class="term-title">terminal — bash</span>
+        </div>
+        <div class="term-body" id="term-body-1">
+          <div class="c-muted">// daniel_marta.js</div>
+          <div><span class="c-purple">function</span> <span class="c-green">newLife</span>() {</div>
+          <div>&nbsp;&nbsp;<span class="c-purple">return</span> {</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-cyan">type</span>: <span class="c-yellow">"bebé"</span>,</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-cyan">status</span>: <span class="c-green">"a caminho"</span>,</div>
+          <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-cyan">bugs</span>: <span class="c-orange">undefined</span> <span class="c-muted">// ainda</span></div>
+          <div>&nbsp;&nbsp;}</div>
+          <div>}</div>
+          <br>
+          <div id="run-line" class="type-line"><span class="c-green">$</span> <span class="c-text">newLife()</span></div>
+          <div class="output-box" id="output-box-1">
+            <span class="c-green">✓ Compilado com sucesso!</span><br>
+            <span class="c-yellow">→ Resultado: </span><span class="c-text">{ type: "bebé", status: </span><span class="c-green">"confirmado"</span><span class="c-text"> }</span><br>
+            <span class="c-muted">// sem erros. pelo menos por agora 😬</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="cmd-btn green" id="open-btn-1" onclick="runCode1()">▶ Executar função</button>
+      <button class="cmd-btn cyan"  id="cont-btn-1" style="display:none" onclick="goTo(2)">$ next_step --flag deploy-date →</button>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 2 — COUNTDOWN ═══ -->
+  <div class="step" id="step-2">
+    <div class="step-content">
+      <p class="eyebrow">// módulo 02</p>
+      <h2 class="step-title"><span class="c-yellow">deployment</span><br>scheduled</h2>
+      <p class="step-body">
+        A data de lançamento em produção está definida. Não foi possível negociar com o product owner (o bebé). <strong>É quando ele quiser.</strong>
+      </p>
+
+      <div class="pipeline">
+        <div class="pipe-row">
+          <span class="pipe-icon">🔬</span>
+          <span class="pipe-label">Tests passed</span>
+          <span class="pipe-status done">PASSED</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-icon">🏗️</span>
+          <span class="pipe-label">Build bebé v1.0.0</span>
+          <span class="pipe-status running">RUNNING</span>
+        </div>
+        <div class="pipe-row">
+          <span class="pipe-icon">🚀</span>
+          <span class="pipe-label">Deploy para o mundo</span>
+          <span class="pipe-status pending">PENDING</span>
+        </div>
+      </div>
+
+      <div class="countdown-grid">
+        <div class="count-block">
+          <div class="count-box"><span class="count-num" id="cnt-d">--</span></div>
+          <span class="count-label">dias</span>
+        </div>
+        <span class="count-sep">:</span>
+        <div class="count-block">
+          <div class="count-box"><span class="count-num" id="cnt-h">--</span></div>
+          <span class="count-label">horas</span>
+        </div>
+        <span class="count-sep">:</span>
+        <div class="count-block">
+          <div class="count-box"><span class="count-num" id="cnt-m">--</span></div>
+          <span class="count-label">min</span>
+        </div>
+        <span class="count-sep">:</span>
+        <div class="count-block">
+          <div class="count-box"><span class="count-num" id="cnt-s">--</span></div>
+          <span class="count-label">seg</span>
+        </div>
+      </div>
+
+      <div class="date-tag" id="date-tag">📅 ETA: 2026-11-11 · v1.0.0-stable</div>
+      <button class="cmd-btn yellow" onclick="goTo(3)">$ check --gender → 🤔</button>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 3 — GÉNERO ═══ -->
+  <div class="step" id="step-3">
+    <div class="step-content">
+      <p class="eyebrow">// módulo 03</p>
+      <h2 class="step-title"><span class="c-purple">typeof</span><br>bebé === ?</h2>
+      <p class="step-body">
+        O sistema recebeu os dados da ecografia. Mas antes de revelar — <strong>faz o teu palpite.</strong> É só um bit de diferença. 😏
+      </p>
+
+      <div class="binary-choice" id="bin-choice">
+        <div class="bin-card zero" onclick="pickGender(0)" tabindex="0">
+          <span class="bin-digit">0</span>
+          <span class="bin-sub">// menina</span>
+        </div>
+        <span class="vs-label">||</span>
+        <div class="bin-card one" onclick="pickGender(1)" tabindex="0">
+          <span class="bin-digit">1</span>
+          <span class="bin-sub">// menino</span>
+        </div>
+      </div>
+
+      <div class="gender-result" id="gender-result">
+        <div class="result-code-block">
+          <div><span class="c-purple">const</span> <span class="c-cyan">resultado</span> = ecografia.<span class="c-green">scan()</span></div>
+          <div><span class="c-muted">// a analisar dados...</span></div>
+          <div><span class="c-purple">return</span> <span class="c-cyan">resultado</span>.<span class="c-yellow">gender</span></div>
+          <div><span class="c-muted">───────────────────</span></div>
+          <div><span class="c-green">✓ Output:</span> <span class="c-orange">"RAPAZ"</span> <span class="c-muted">// bit = 1</span></div>
+        </div>
+        <div class="result-big">É MENINO! 💙</div>
+        <div class="result-sub" id="gender-sub">gender = 1 // boa previsão! 🎯</div>
+      </div>
+
+      <button class="cmd-btn purple" id="gender-next" style="display:none" onclick="goTo(4)">$ show --final-message →</button>
+    </div>
+  </div>
+
+  <!-- ═══ STEP 4 — FINAL ═══ -->
+  <div class="step" id="step-4">
+    <div class="step-content">
+      <p class="eyebrow">// módulo 04</p>
+
+      <div class="success-banner">
+        <span class="success-icon">✅</span>
+        <div class="success-title">BUILD SUCCESSFUL</div>
+        <div class="success-sub">exit code 0 · sem erros · sem avisos (por agora)</div>
+      </div>
+
+      <div class="log-box">
+        <div class="log-bar">stdout · baby_announcement.log</div>
+        <div class="log-body">
+          <div class="log-line">
+            <span class="log-ts">[INFO]</span>
+            <span class="log-msg c-green">Ainda nem sabemos a tua cara e já estamos com stack overflow de amor por ti. 💙</span>
+          </div>
+          <div class="log-line">
+            <span class="log-ts">[WARN]</span>
+            <span class="log-msg c-yellow">Prepara-te: vais ter colo a mais, fotos a mais, e uns pais com memory leak de ternura.</span>
+          </div>
+          <div class="log-line">
+            <span class="log-ts">[INFO]</span>
+            <span class="log-msg c-cyan">O mundo ficou com +1 instância de felicidade no namespace da nossa família. 🚀</span>
+          </div>
+          <div class="log-line">
+            <span class="log-ts">[INFO]</span>
+            <span class="log-msg c-muted">ETA: 2026-11-11 · runtime: ∞ · uptime garantido para sempre.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="term-window" style="margin-top:1rem">
+        <div class="term-bar">
+          <div class="term-dot r"></div><div class="term-dot y"></div><div class="term-dot g"></div>
+          <span class="term-title">family.config.json</span>
+        </div>
+        <div class="term-body">
+          <div>{</div>
+          <div>&nbsp;&nbsp;<span class="c-cyan">"parents"</span>: [<span class="c-yellow">"Daniel"</span>, <span class="c-yellow">"Marta"</span>],</div>
+          <div>&nbsp;&nbsp;<span class="c-cyan">"newMember"</span>: <span class="c-green">true</span>,</div>
+          <div>&nbsp;&nbsp;<span class="c-cyan">"gender"</span>: <span class="c-yellow">"rapaz"</span>,</div>
+          <div>&nbsp;&nbsp;<span class="c-cyan">"loveLevel"</span>: <span class="c-orange">Infinity</span>,</div>
+          <div>&nbsp;&nbsp;<span class="c-cyan">"ready"</span>: <span class="c-green">true</span> <span class="c-muted">// mais ou menos 😅</span></div>
+          <div>}</div>
+        </div>
+      </div>
+
+      <p class="final-parents">// committed by Daniel &amp; Marta 💑</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="confetti-wrap" id="confetti-wrap"></div>
+
+<script>
+/* ═══ VIEWPORT HEIGHT ═══ */
+function setVH(){document.documentElement.style.setProperty('--vh',(window.innerHeight*.01)+'px')}
+setVH();window.addEventListener('resize',setVH);
+
+/* ═══ MATRIX RAIN ═══ */
+(function(){
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ∑∫∂∆∇λμπσφ{}[]<>=!/*+-';
+
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const fontSize = 13;
+  let cols = Math.floor(window.innerWidth / fontSize);
+  let drops = Array(cols).fill(1);
+
+  function draw(){
+    cols = Math.floor(canvas.width / fontSize);
+    while(drops.length < cols) drops.push(Math.random() * -canvas.height/fontSize);
+
+    ctx.fillStyle = 'rgba(13,17,23,0.06)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#3fb950';
+    ctx.font = fontSize + 'px JetBrains Mono, monospace';
+
+    for(let i = 0; i < drops.length; i++){
+      const char = chars[Math.floor(Math.random()*chars.length)];
+      ctx.globalAlpha = Math.random() * 0.7 + 0.3;
+      ctx.fillText(char, i*fontSize, drops[i]*fontSize);
+      ctx.globalAlpha = 1;
+      if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.4;
+    }
+  }
+  setInterval(draw, 50);
+})();
+
+/* ═══ INTRO ═══ */
+function beginReveal(){
+  document.getElementById('screen-intro').classList.add('exit');
+  setTimeout(()=>{
+    document.getElementById('screen-intro').style.display='none';
+    document.getElementById('main').style.display='block';
+    document.getElementById('progress-bar').classList.add('visible');
+    document.getElementById('progress-dots').classList.add('visible');
+    startCountdown();
+  }, 850);
+}
+
+/* ═══ STEPS ═══ */
+let cur = 1;
+function goTo(n){
+  document.getElementById('step-'+cur).classList.remove('active');
+  const next = document.getElementById('step-'+n);
+  next.classList.add('active');
+  next.scrollTop = 0;
+  const c = next.querySelector('.step-content');
+  if(c){c.style.animation='none';void c.offsetWidth;c.style.animation='';}
+  cur = n;
+  updateProgress();
+}
+
+function updateProgress(){
+  for(let i=1;i<=4;i++){
+    const d = document.getElementById('dot-'+i);
+    d.className='dot';
+    if(i<cur) d.classList.add('done');
+    else if(i===cur) d.classList.add('active');
+  }
+  document.getElementById('progress-fill').style.width=(cur/4*100)+'%';
+}
+
+/* ═══ STEP 1 — run code ═══ */
+let s1done = false;
+function runCode1(){
+  if(s1done) return; s1done = true;
+  document.getElementById('open-btn-1').style.display='none';
+
+  // trigger typing animation
+  const rl = document.getElementById('run-line');
+  rl.classList.add('go');
+
+  setTimeout(()=>{
+    document.getElementById('output-box-1').classList.add('show');
+    confetti(['#3fb950','#79c0ff','#e3b341','#bc8cff','#ffa657','#ffffff']);
+    setTimeout(()=>{ document.getElementById('cont-btn-1').style.display='inline-block'; }, 800);
+  }, 1400);
+}
+
+/* ═══ COUNTDOWN ═══ */
+function startCountdown(){
+  const target = new Date('2026-11-11T00:00:00');
+  function tick(){
+    const diff = target - new Date();
+    if(diff <= 0){
+      ['d','h','m','s'].forEach(k=>document.getElementById('cnt-'+k).textContent='00');
+      const t = document.getElementById('date-tag');
+      if(t) t.textContent='🎉 Deploy concluído! Baby v1.0.0 em produção!';
+      return;
+    }
+    document.getElementById('cnt-d').textContent=String(Math.floor(diff/86400000)).padStart(2,'0');
+    document.getElementById('cnt-h').textContent=String(Math.floor((diff%86400000)/3600000)).padStart(2,'0');
+    document.getElementById('cnt-m').textContent=String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    document.getElementById('cnt-s').textContent=String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+  }
+  tick(); setInterval(tick, 1000);
+}
+
+/* ═══ GÉNERO ═══ */
+let gDone = false;
+function pickGender(choice){
+  if(gDone) return; gDone = true;
+  const zero = document.querySelector('.bin-card.zero');
+  const one  = document.querySelector('.bin-card.one');
+
+  if(choice === 1){
+    one.classList.add('sel-one'); zero.classList.add('loser');
+    document.getElementById('gender-sub').textContent = '// gender = 1 → acertaste! prediction_accuracy = 100% 🎯';
+  } else {
+    zero.classList.add('sel-zero'); one.classList.add('loser');
+    document.getElementById('gender-sub').textContent = '// gender != 0 → prediction_error! off by one bit 😂';
+  }
+
+  setTimeout(()=>{
+    const bc = document.getElementById('bin-choice');
+    bc.style.transform='scale(.8)'; bc.style.opacity='.25';
+    document.getElementById('gender-result').classList.add('show');
+    confetti(['#79c0ff','#3fb950','#bc8cff','#e3b341','#ffffff','#ffa657']);
+    setTimeout(()=>{ document.getElementById('gender-next').style.display='inline-block'; }, 900);
+  }, 700);
+}
+
+/* ═══ CONFETTI (chars: 0 1 { } λ ∑) ═══ */
+let ci = 0;
+const cChars = ['0','1','{','}','<','>','λ','∑','#','//'];
+function confetti(colors){
+  const wrap = document.getElementById('confetti-wrap');
+  wrap.innerHTML = '';
+  for(let i=0;i<100;i++){
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const color  = colors[Math.floor(Math.random()*colors.length)];
+    const ch     = cChars[Math.floor(Math.random()*cChars.length)];
+    const x      = 5 + Math.random()*90;
+    const size   = 10 + Math.random()*10;
+    const dur    = 1.6 + Math.random()*2;
+    const delay  = Math.random()*.9;
+    const rot    = -360 + Math.random()*720;
+    const dx     = -70 + Math.random()*140;
+    const id     = 'k'+(ci++)+'i'+i;
+    const st     = document.createElement('style');
+    st.textContent=`@keyframes ${id}{0%{opacity:1;transform:translateY(0) translateX(0) rotate(0deg)}100%{opacity:0;transform:translateY(110vh) translateX(${dx}px) rotate(${rot}deg)}}`;
+    document.head.appendChild(st);
+    p.style.cssText=`left:${x}vw;top:-16px;font-size:${size}px;color:${color};animation:${id} ${dur}s ease-in ${delay}s forwards;`;
+    p.textContent = ch;
+    wrap.appendChild(p);
+  }
+  setTimeout(()=>{ wrap.innerHTML=''; }, 5000);
+}
+</script>
+</body>
+</html>
+<!-- commit 1 - 2026-05-28T18:39:36.0539983+01:00 -->
